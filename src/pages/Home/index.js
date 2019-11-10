@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 import { FlatList, View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
-// import { Container } from './styles';
-
 import api from '../../services/api';
-import logo from '../../assets/images/logo.png';
+import { formatPrice } from '../../util/format';
+
+import * as CartActions from '../../store/modules/cart/actions';
 
 import {
   Container,
@@ -33,30 +34,36 @@ class Home extends Component {
   getProducts = async () => {
     const response = await api.get('/products');
 
-    this.setState({ products: response.data });
+    const data = response.data.map(product => ({
+      ...product,
+      priceFormatted: formatPrice(product.price),
+    }));
+
+    this.setState({ products: data });
   };
 
-  handleAddProduct = product => {
-    const { dispatch } = this.props;
+  handleAddProduct = id => {
+    const { addToCartRequest } = this.props;
 
-    dispatch({
-      type: 'ADD_TO_CART',
-      product,
-    });
+    addToCartRequest(id);
+
+    this.props.navigation.navigate('Cart');
   };
 
   handleProduct = ({ item }) => {
+    const { amount } = this.props;
+
     return (
       <Product key={item.id}>
         <ProductImage source={{ uri: item.image }} />
         <ProductDesc>
           <ProductTitle>{item.title}</ProductTitle>
-          <ProductPrice>{item.price}</ProductPrice>
+          <ProductPrice>{item.priceFormatted}</ProductPrice>
         </ProductDesc>
-        <ProductButton onPress={() => this.handleAddProduct(item)}>
+        <ProductButton onPress={() => this.handleAddProduct(item.id)}>
           <ProductStockContent>
             <Icon name="local-grocery-store" color="#fff" size={25} />
-            <ProductStock>{item.amount}</ProductStock>
+            <ProductStock>{amount[item.id] || 0}</ProductStock>
           </ProductStockContent>
           <ProductButtonDesc>
             <ProductTextButton>Adicionar ao carrinho</ProductTextButton>
@@ -89,4 +96,17 @@ class Home extends Component {
   }
 }
 
-export default connect()(Home);
+const mapStateToProps = state => ({
+  amount: state.cart.reduce((amount, product) => {
+    amount[product.id] = product.amount;
+    return amount;
+  }, {}),
+});
+
+const mapDispatchToProps = dispatch =>
+  bindActionCreators(CartActions, dispatch);
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Home);
