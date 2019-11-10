@@ -15,7 +15,7 @@ const Routes = createAppContainer(
     },
     {
       defaultNavigationOptions: {
-        header: <Header />,
+        header: ({ navigation }) => <Header navigation={navigation} />,
       },
     }
   )

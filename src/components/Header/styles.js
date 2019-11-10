@@ -35,7 +35,7 @@ export const CartCount = styled.Text`
   right: -10;
   top: -10;
   color: #fff;
-  background: #e30220;
+  background: #7159c1;
   width: 18px;
   border-radius: 9px;
   text-align: center;
