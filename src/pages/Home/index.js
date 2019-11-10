@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { useState, useEffect } from 'react';
 import { connect } from 'react-redux';
 import { bindActionCreators } from 'redux';
 import { FlatList, View } from 'react-native';
@@ -22,37 +22,31 @@ import {
   ProductStockContent,
 } from './styles';
 
-class Home extends Component {
-  state = {
-    products: [],
-  };
+function Home({ addToCartRequest, navigation, amount }) {
+  const [products, setProducts] = useState([]);
 
-  componentDidMount() {
-    this.getProducts();
-  }
+  useEffect(() => {
+    async function getProducts() {
+      const response = await api.get('/products');
 
-  getProducts = async () => {
-    const response = await api.get('/products');
+      const data = response.data.map(product => ({
+        ...product,
+        priceFormatted: formatPrice(product.price),
+      }));
 
-    const data = response.data.map(product => ({
-      ...product,
-      priceFormatted: formatPrice(product.price),
-    }));
+      setProducts(data);
+    }
 
-    this.setState({ products: data });
-  };
+    getProducts();
+  }, []);
 
-  handleAddProduct = id => {
-    const { addToCartRequest } = this.props;
-
+  function handleAddProduct(id) {
     addToCartRequest(id);
 
-    this.props.navigation.navigate('Cart');
-  };
+    navigation.navigate('Cart');
+  }
 
-  handleProduct = ({ item }) => {
-    const { amount } = this.props;
-
+  function handleProduct({ item }) {
     return (
       <Product key={item.id}>
         <ProductImage source={{ uri: item.image }} />
@@ -60,7 +54,7 @@ class Home extends Component {
           <ProductTitle>{item.title}</ProductTitle>
           <ProductPrice>{item.priceFormatted}</ProductPrice>
         </ProductDesc>
-        <ProductButton onPress={() => this.handleAddProduct(item.id)}>
+        <ProductButton onPress={() => handleAddProduct(item.id)}>
           <ProductStockContent>
             <Icon name="local-grocery-store" color="#fff" size={25} />
             <ProductStock>{amount[item.id] || 0}</ProductStock>
@@ -71,29 +65,21 @@ class Home extends Component {
         </ProductButton>
       </Product>
     );
-  };
-
-  // handleProduct = () => {
-  //  this.props.navigation.navigate('Cart');
-  // };
-
-  render() {
-    const { products } = this.state;
-
-    return (
-      <Container>
-        <View>
-          <FlatList
-            showsHorizontalScrollIndicator={false}
-            data={products}
-            horizontal
-            keyExtractor={item => String(item.id)}
-            renderItem={this.handleProduct}
-          />
-        </View>
-      </Container>
-    );
   }
+
+  return (
+    <Container>
+      <View>
+        <FlatList
+          showsHorizontalScrollIndicator={false}
+          data={products}
+          horizontal
+          keyExtractor={item => String(item.id)}
+          renderItem={item => handleProduct(item)}
+        />
+      </View>
+    </Container>
+  );
 }
 
 const mapStateToProps = state => ({
